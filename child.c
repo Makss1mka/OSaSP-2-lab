@@ -4,7 +4,7 @@
 #include <string.h>
 
 void readEnvFile(const char *filename) {
-    FILE* file = open(filename, "r");
+    FILE *file = fopen(filename, "r");
     if (!file) {
         perror("Failed to open env file");
         return;
@@ -14,20 +14,19 @@ void readEnvFile(const char *filename) {
     while (fgets(var, sizeof(var), file)) {
         var[strcspn(var, "\n")] = '\0';
         char *value = getenv(var);
-
         printf("%s=%s\n", var, value ? value : "(null)");
     }
 
     fclose(file);
 }
 
-void printEnvVars(char* envp[]) {
-    for (char** env = envp; *env; env++) {
+void printEnvVars(char *envp[]) {
+    for (char **env = envp; *env; env++) {
         printf("%s\n", *env);
     }
 }
 
-int main(int argc, char* argv[]) {
+int main(int argc, char *argv[], char *envp[]) {
     printf("Child process: Name=%s, PID=%d, PPID=%d\n", argv[0], getpid(), getppid());
 
     if (argc > 1) {
@@ -35,8 +34,9 @@ int main(int argc, char* argv[]) {
         readEnvFile(argv[1]);
     } else {
         printf("Reading environment from envp[]\n");
-        readEnvFile(envp);
+        printEnvVars(envp);
     }
 
     return 0;
 }
+

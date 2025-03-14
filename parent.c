@@ -6,15 +6,15 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 
-#define ENV_FILE "./env"
+#define ENV_FILE "env"
 #define MAX_CHILDS 16
-#define CHILD_PATH "./child"
+#define CHILD_PATH "CHILD_PATH"
 
 void readAndPrintEnv() {
-    extern char** environment;
+    extern char** environ;
 
-    printf("ENV:\n")
-    for(char **env = environment; *env; env++){
+    printf("ENV:\n");
+    for(char **env = environ; *env; env++){
         printf("  %s\n", *env);
     }
 }
@@ -22,14 +22,14 @@ void readAndPrintEnv() {
 void createChild(int id, int mode) {
     char childPath[256];
     char childName[32];
-    char *envPath = getenv(CHILD_PATH_ENV);
+    char *envPath = getenv(CHILD_PATH);
 
     if (!envPath) {
-        fprintf(stderr, "Chill Path does not set\n");
+        fprintf(stderr, "Child Path does not set\n");
     } 
 
-    snpeintf(childPath, siaeof(childPath), "%s/child", envPath);
-    snpeintf(childName, siaeof(chilName), "child_%02d", id);
+    snprintf(childPath, sizeof(childPath), "%s/child", envPath);
+    snprintf(childName, sizeof(childName), "child_%02d", id);
 
     pid_t pid = fork();
 
@@ -40,8 +40,8 @@ void createChild(int id, int mode) {
         if (mode == 0) {
             execl(childPath, childName, ENV_FILE, NULL);
         } else {
-            extern** environment;
-            execve(child_path, (char *[]){childName, NULL}, environment);
+            extern char** environ;
+            execve(childPath, (char *[]){childName, NULL}, environ);
         }
         perror("Exec failed");
         exit(EXIT_FAILURE);
@@ -51,35 +51,33 @@ void createChild(int id, int mode) {
 }
 
 int main(int argc, char* argv[]) {
-    int childCount = 0;
     char command;
+    int childCount = 0;
 
     readAndPrintEnv();
 
-    printf("Commands:\n '+' - spawn child (execve with getenv)
-        \n '*' - spawn child (execve with envp)\n 'q' - exit\n");
+    printf("Commands:\n '+' - spawn child (execve with getenv)\n '*' - spawn child (execve with envp)\n 'q' - exit\n");
 
     while (1) {
         command = getchar();
-
-        if (command == '+') {
+        if (command == 'q') {
+            printf("Exiting parent process...\n");
+            break;
+        } else if (command == '+') {
             if (childCount < MAX_CHILDS) {
                 createChild(childCount++, 0);
             } else {
-                printf("Child limit is reached");
+                printf("Max child processes reached.\n");
             }
         } else if (command == '*') {
             if (childCount < MAX_CHILDS) {
                 createChild(childCount++, 1);
             } else {
-                printf("Child limit is reached");
+                printf("Max child processes reached.\n");
             }
-        } else if (command == 'q') {
-            printf("Exiting parent process.\n");
-            exit(0);
         }
     }
-
+    
     return 0;
 }
 
